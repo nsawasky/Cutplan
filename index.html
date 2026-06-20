@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#0a0a0a">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Cut Plan">
+<link rel="manifest" href="manifest.json">
+<title>Cut Plan | 210 → 197</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --black: #0a0a0a;
+    --offwhite: #f0ede6;
+    --rust: #c94f2a;
+    --rust-dim: #7a3018;
+    --steel: #2a2e35;
+    --muted: #6b6b6b;
+    --green: #3a7d44;
+    --gold: #a87c2a;
+    --blue: #4a6fa5;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    background: var(--black);
+    color: var(--offwhite);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    padding: 2rem 1rem 4rem;
+  }
+  header { text-align:center; margin-bottom:3rem; padding-top:1rem; }
+  .eyebrow { font-size:0.72rem; letter-spacing:0.25em; text-transform:uppercase; color:var(--rust); font-weight:500; margin-bottom:0.5rem; }
+  h1 { font-family:'Bebas Neue',sans-serif; font-size:clamp(3.5rem,12vw,7rem); line-height:0.9; letter-spacing:0.02em; }
+  h1 span { color:var(--rust); }
+  .subtitle { font-size:0.85rem; color:var(--muted); margin-top:0.75rem; font-weight:300; letter-spacing:0.04em; }
+
+  /* Week strip */
+  .week-strip { max-width:860px; margin:0 auto 1rem; display:grid; grid-template-columns:repeat(7,1fr); gap:2px; border-radius:2px; overflow:hidden; }
+  .strip-day { background:var(--steel); padding:0.6rem 0.3rem; text-align:center; }
+  .strip-day .sday-name { font-size:0.6rem; letter-spacing:0.15em; text-transform:uppercase; color:var(--muted); margin-bottom:0.3rem; }
+  .strip-day .sday-type { font-family:'Bebas Neue',sans-serif; font-size:0.95rem; letter-spacing:0.05em; line-height:1.1; }
+  .strip-day.active-cardio { background:#0e1520; border-top:2px solid var(--blue); }
+  .strip-day.active-cardio .sday-type { color:#9ab0c8; }
+  .strip-day.active-lift { background:#0c1a10; border-top:2px solid var(--green); }
+  .strip-day.active-lift .sday-type { color:#7fcf8d; }
+  .strip-day.active-wild { background:#141824; border-top:2px solid var(--blue); }
+  .strip-day.active-wild .sday-type { color:#9ab0c8; }
+  .strip-day.rest-day { background:#111; border-top:2px solid #222; }
+  .strip-day.rest-day .sday-type { color:#333; }
+  .if-pip { display:inline-block; width:6px; height:6px; background:var(--gold); border-radius:50%; margin-top:0.3rem; }
+  .if-legend { text-align:center; font-size:0.68rem; color:#777; margin-bottom:2rem; letter-spacing:0.08em; }
+  .if-legend span { display:inline-block; width:7px; height:7px; background:var(--gold); border-radius:50%; margin-right:0.4rem; vertical-align:middle; }
+
+  /* Stats */
+  .targets { max-width:860px; margin:0 auto 2rem; display:grid; grid-template-columns:repeat(3,1fr); gap:1px; background:#222; border:1px solid #222; border-radius:2px; overflow:hidden; }
+  .target-cell { background:var(--black); padding:1.1rem 1rem; text-align:center; }
+  .target-num { font-family:'Bebas Neue',sans-serif; font-size:2.2rem; color:var(--rust); line-height:1; }
+  .target-label { font-size:0.65rem; letter-spacing:0.18em; text-transform:uppercase; color:var(--muted); margin-top:0.3rem; }
+
+  /* Cards */
+  .week-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:1rem; max-width:860px; margin:0 auto 2.5rem; }
+  .day-card { background:var(--steel); border-radius:2px; overflow:hidden; opacity:0; transform:translateY(20px); animation:rise 0.5s forwards; }
+  .day-card:nth-child(1){animation-delay:0.05s}
+  .day-card:nth-child(2){animation-delay:0.15s}
+  .day-card:nth-child(3){animation-delay:0.25s}
+  .day-card:nth-child(4){animation-delay:0.35s}
+  @keyframes rise { to { opacity:1; transform:translateY(0); } }
+  .day-card.accent-blue { border-top:3px solid var(--blue); }
+  .day-card.accent-green { border-top:3px solid var(--green); }
+  .card-header { display:flex; justify-content:space-between; align-items:baseline; padding:1rem 1.2rem 0.5rem; flex-wrap:wrap; gap:0.4rem; }
+  .day-name { font-family:'Bebas Neue',sans-serif; font-size:1.9rem; letter-spacing:0.04em; line-height:1; }
+  .badge-row { display:flex; gap:0.4rem; align-items:center; flex-wrap:wrap; }
+  .day-tag { font-size:0.65rem; letter-spacing:0.15em; text-transform:uppercase; font-weight:500; padding:0.2rem 0.5rem; border-radius:2px; }
+  .tag-cardio { background:#1a2438; color:#9ab0c8; }
+  .tag-lift { background:#1e3a24; color:#7fcf8d; }
+  .tag-if { background:#2e2408; color:#d4a843; font-size:0.6rem; }
+  .tag-smoothie { background:#1a2e1a; color:#7fcf8d; font-size:0.6rem; }
+  .card-body { padding:0.5rem 1.2rem 1.2rem; }
+  .focus-label { font-size:0.68rem; letter-spacing:0.2em; text-transform:uppercase; color:var(--muted); margin-bottom:0.3rem; }
+  .focus-title { font-size:1.05rem; font-weight:500; color:var(--offwhite); margin-bottom:0.8rem; line-height:1.3; }
+  .workout-list { list-style:none; display:flex; flex-direction:column; gap:0.4rem; }
+  .workout-list li { font-size:0.83rem; color:#bbb; padding-left:1rem; position:relative; line-height:1.4; font-weight:300; }
+  .workout-list li::before { content:'—'; position:absolute; left:0; color:var(--rust); font-size:0.7rem; }
+  .workout-list li.green-bullet::before { color:var(--green); }
+  .workout-list li.blue-bullet::before { color:var(--blue); }
+  .workout-list li.gold-bullet::before { color:#d4a843; }
+  .section-label { font-size:0.65rem; letter-spacing:0.15em; text-transform:uppercase; color:var(--muted); margin:0.8rem 0 0.4rem; padding-left:1rem; }
+  .note-box { background:#111; border-left:2px solid var(--rust); padding:0.7rem 1rem; border-radius:0 2px 2px 0; font-size:0.78rem; color:#999; line-height:1.5; margin-top:0.8rem; }
+  .note-box.gold { border-left-color:var(--gold); }
+  .note-box.blue { border-left-color:var(--blue); }
+  .note-box strong { color:var(--rust); font-weight:500; }
+  .note-box.gold strong { color:#d4a843; }
+  .note-box.blue strong { color:#9ab0c8; }
+
+  /* IF section */
+  .if-section { max-width:860px; margin:0 auto 2rem; background:#14100a; border:1px solid #2e2408; border-left:3px solid var(--gold); border-radius:2px; padding:1.2rem 1.5rem; }
+  .if-section h3 { font-family:'Bebas Neue',sans-serif; font-size:1.3rem; letter-spacing:0.06em; color:#d4a843; margin-bottom:0.6rem; }
+  .if-grid { display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin-bottom:0.8rem; }
+  .if-day-block { background:#1a1408; border-radius:2px; padding:0.8rem 1rem; }
+  .if-day-block .ifd-name { font-family:'Bebas Neue',sans-serif; font-size:1.2rem; color:#d4a843; letter-spacing:0.05em; }
+  .if-day-block .ifd-detail { font-size:0.78rem; color:#999; line-height:1.5; margin-top:0.3rem; font-weight:300; }
+  .if-note { font-size:0.78rem; color:#888; line-height:1.5; }
+
+  /* Injury banner */
+  .injury-banner { max-width:860px; margin:0 auto 2rem; background:#1a1010; border:1px solid #3a1f1f; border-left:3px solid #c94f2a; border-radius:2px; padding:1rem 1.5rem; display:flex; gap:1rem; align-items:flex-start; }
+  .injury-icon { font-size:1.4rem; line-height:1; flex-shrink:0; }
+  .injury-text { font-size:0.8rem; color:#999; line-height:1.6; }
+  .injury-text strong { color:#e8825a; font-weight:500; }
+
+  /* Nutrition */
+  .nutrition-strip { max-width:860px; margin:0 auto 2.5rem; background:var(--steel); border-radius:2px; padding:1.2rem 1.5rem; border-left:3px solid var(--rust); }
+  .nutrition-strip h3 { font-family:'Bebas Neue',sans-serif; font-size:1.3rem; letter-spacing:0.06em; margin-bottom:0.6rem; }
+  .nutrition-strip ul { list-style:none; display:flex; flex-direction:column; gap:0.35rem; }
+  .nutrition-strip li { font-size:0.82rem; color:#aaa; padding-left:1rem; position:relative; font-weight:300; line-height:1.4; }
+  .nutrition-strip li::before { content:'→'; position:absolute; left:0; color:var(--rust); font-size:0.7rem; }
+
+  /* Weight Tracker */
+  .tracker-wrap { max-width:860px; margin:0 auto 0; background:var(--steel); border-radius:2px; border-top:3px solid var(--rust); overflow:hidden; }
+  .tracker-header { padding:1.2rem 1.5rem 0.8rem; display:flex; justify-content:space-between; align-items:baseline; flex-wrap:wrap; gap:0.5rem; }
+  .tracker-header h3 { font-family:'Bebas Neue',sans-serif; font-size:1.6rem; letter-spacing:0.06em; color:var(--offwhite); }
+  .tracker-stats { display:flex; gap:1.5rem; }
+  .tstat { text-align:right; }
+  .tstat-num { font-family:'Bebas Neue',sans-serif; font-size:1.4rem; color:var(--rust); line-height:1; }
+  .tstat-num.positive { color:var(--green); }
+  .tstat-label { font-size:0.6rem; letter-spacing:0.15em; text-transform:uppercase; color:var(--muted); }
+  .tracker-input-row { display:flex; gap:0.5rem; padding:0 1.5rem 1rem; align-items:center; flex-wrap:wrap; }
+  .tracker-input-row input[type="number"], .tracker-input-row input[type="date"] { background:#1a1f25; border:1px solid #3a3f47; border-radius:2px; color:var(--offwhite); font-family:'DM Sans',sans-serif; font-size:0.9rem; padding:0.5rem 0.7rem; outline:none; transition:border-color 0.2s; }
+  .tracker-input-row input[type="number"] { width:100px; }
+  .tracker-input-row input[type="date"] { width:155px; color-scheme:dark; }
+  .tracker-input-row input:focus { border-color:var(--rust); }
+  .tracker-input-row input::placeholder { color:#555; }
+  .btn-log { background:var(--rust); color:var(--offwhite); border:none; border-radius:2px; padding:0.5rem 1.1rem; font-family:'Bebas Neue',sans-serif; font-size:1rem; letter-spacing:0.08em; cursor:pointer; transition:background 0.15s; }
+  .btn-log:hover { background:#a83f1e; }
+  .chart-area { padding:0 1.5rem 0.5rem; height:160px; position:relative; }
+  .chart-area canvas { width:100% !important; height:100% !important; }
+  .chart-empty { display:flex; align-items:center; justify-content:center; height:100%; font-size:0.78rem; color:#444; letter-spacing:0.1em; text-transform:uppercase; }
+  .log-table-wrap { max-height:180px; overflow-y:auto; margin:0 1.5rem 1.2rem; border:1px solid #333; border-radius:2px; }
+  .log-table-wrap::-webkit-scrollbar { width:4px; }
+  .log-table-wrap::-webkit-scrollbar-track { background:#111; }
+  .log-table-wrap::-webkit-scrollbar-thumb { background:#444; border-radius:2px; }
+  .log-table { width:100%; border-collapse:collapse; font-size:0.8rem; }
+  .log-table th { background:#1a1f25; color:var(--muted); font-weight:500; font-size:0.65rem; letter-spacing:0.15em; text-transform:uppercase; padding:0.5rem 0.8rem; text-align:left; position:sticky; top:0; }
+  .log-table td { padding:0.45rem 0.8rem; color:#bbb; border-top:1px solid #2a2f35; font-weight:300; }
+  .log-table tr:hover td { background:#1f252c; }
+  .log-table .change-down { color:#7fcf8d; }
+  .log-table .change-up { color:#e8825a; }
+  .log-table .change-same { color:#666; }
+  .btn-delete { background:none; border:none; color:#444; cursor:pointer; font-size:0.85rem; padding:0 0.2rem; transition:color 0.15s; }
+  .btn-delete:hover { color:var(--rust); }
+  .tracker-footer { padding:0 1.5rem 1rem; display:flex; justify-content:space-between; align-items:center; }
+  .goal-bar-wrap { flex:1; margin-right:1.5rem; }
+  .goal-bar-label { display:flex; justify-content:space-between; font-size:0.65rem; letter-spacing:0.12em; text-transform:uppercase; color:var(--muted); margin-bottom:0.3rem; }
+  .goal-bar-track { background:#1a1f25; border-radius:2px; height:6px; overflow:hidden; }
+  .goal-bar-fill { height:100%; background:var(--rust); border-radius:2px; transition:width 0.4s ease; }
+  .btn-clear { background:none; border:1px solid #333; border-radius:2px; color:#555; font-size:0.65rem; letter-spacing:0.12em; text-transform:uppercase; padding:0.3rem 0.7rem; cursor:pointer; transition:all 0.15s; white-space:nowrap; }
+  .btn-clear:hover { border-color:var(--rust); color:var(--rust); }
+
+  @media (max-width:500px) { .if-grid { grid-template-columns:1fr; } }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="eyebrow">Cut Protocol — Modified</div>
+  <h1>210 <span>→</span> 197</h1>
+  <div class="subtitle">3 lift days · Low-impact cardio · 2× IF · Full hour sessions</div>
+</header>
+
+<!-- Injury note -->
+<div class="injury-banner">
+  <div class="injury-icon">🦶</div>
+  <div class="injury-text"><strong>Foot injury — modified plan.</strong> Sprints and basketball removed until cleared by a doctor. Replaced with biking, treadmill walking, and outdoor walking. Revisit when foot is healed.</div>
+</div>
+
+<!-- Week strip -->
+<div class="week-strip">
+  <div class="strip-day active-cardio">
+    <div class="sday-name">Mon</div>
+    <div class="sday-type">Cardio</div>
+    <div class="if-pip"></div>
+  </div>
+  <div class="strip-day active-lift">
+    <div class="sday-name">Tue</div>
+    <div class="sday-type">Upper</div>
+  </div>
+  <div class="strip-day rest-day">
+    <div class="sday-name">Wed</div>
+    <div class="sday-type">Rest</div>
+    <div class="if-pip"></div>
+  </div>
+  <div class="strip-day active-lift">
+    <div class="sday-name">Thu</div>
+    <div class="sday-type">Lower</div>
+  </div>
+  <div class="strip-day active-cardio">
+    <div class="sday-name">Fri</div>
+    <div class="sday-type">Cardio*</div>
+  </div>
+  <div class="strip-day active-lift">
+    <div class="sday-name">Sat</div>
+    <div class="sday-type">Full</div>
+  </div>
+  <div class="strip-day rest-day">
+    <div class="sday-name">Sun</div>
+    <div class="sday-type">Rest</div>
+  </div>
+</div>
+<div class="if-legend"><span></span> 16/8 Fasting Day &nbsp;·&nbsp; *Fri cardio = alternate if Mon skipped</div>
+
+<!-- Stats -->
+<div class="targets">
+  <div class="target-cell"><div class="target-num">13</div><div class="target-label">lbs to drop</div></div>
+  <div class="target-cell"><div class="target-num">~1</div><div class="target-label">lb per week</div></div>
+  <div class="target-cell"><div class="target-num">4</div><div class="target-label">days active</div></div>
+</div>
+
+<!-- Day cards -->
+<div class="week-grid">
+
+  <!-- Monday -->
+  <div class="day-card accent-blue">
+    <div class="card-header">
+      <div class="day-name">Monday</div>
+      <div class="badge-row">
+        <div class="day-tag tag-cardio">Cardio</div>
+        <div class="day-tag tag-if">16/8 Fast</div>
+        <div class="day-tag tag-smoothie">🥤 Smoothie</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="focus-label">Lunch · ~30–40 min · WFH · Low impact</div>
+      <div class="focus-title">Bike, Treadmill Walk, or Outdoor Walk</div>
+      <ul class="workout-list">
+        <li class="blue-bullet"><strong style="color:#ccc">Outdoor bike:</strong> 30–40 min moderate pace, aim for 10–15 miles. Keep cadence up to elevate heart rate without foot stress</li>
+        <li class="blue-bullet"><strong style="color:#ccc">Treadmill walk:</strong> 35–40 min at 3.5–4.0 mph, incline 6–10% — incline walking burns significantly more than flat</li>
+        <li class="blue-bullet"><strong style="color:#ccc">Outdoor walk:</strong> 40 min brisk, hilly route if possible</li>
+        <li class="blue-bullet">Pick whichever feels best on your foot that day</li>
+      </ul>
+      <div class="note-box gold"><strong>IF + Smoothie:</strong> Skip breakfast, fast from ~8pm Sunday. Have your fruit smoothie after the workout around noon — it counts as your fast-break meal and fuels recovery without a heavy meal.</div>
+    </div>
+  </div>
+
+  <!-- Tuesday -->
+  <div class="day-card accent-green">
+    <div class="card-header">
+      <div class="day-name">Tuesday</div>
+      <div class="badge-row"><div class="day-tag tag-lift">Lift</div></div>
+    </div>
+    <div class="card-body">
+      <div class="focus-label">Morning · 60 min · Eat breakfast ✓</div>
+      <div class="focus-title">Upper Body</div>
+      <ul class="workout-list">
+        <li class="green-bullet">Bench or incline press — 4×6–8</li>
+        <li class="green-bullet">Barbell or DB row — 4×8</li>
+        <li class="green-bullet">Overhead press — 3×8–10</li>
+        <li class="green-bullet">Pull-ups or lat pulldown — 3×10</li>
+        <li class="green-bullet">Bicep + tricep superset — 3 rounds</li>
+        <li class="green-bullet">Face pulls or band pull-aparts — 3×15</li>
+      </ul>
+      <div class="section-label">Rotating add-on · pick one</div>
+      <ul class="workout-list">
+        <li class="gold-bullet"><strong style="color:#d4a843">Week A — Core:</strong> 3 rounds — plank 45 sec, dead bug ×10, pallof press ×10</li>
+        <li class="gold-bullet"><strong style="color:#d4a843">Week B — Shoulders:</strong> Lateral raises 3×15, rear delt fly 3×15</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Thursday -->
+  <div class="day-card accent-green">
+    <div class="card-header">
+      <div class="day-name">Thursday</div>
+      <div class="badge-row"><div class="day-tag tag-lift">Lift + Condition</div></div>
+    </div>
+    <div class="card-body">
+      <div class="focus-label">Morning · 60 min · Eat breakfast ✓</div>
+      <div class="focus-title">Lower Body + Finisher</div>
+      <ul class="workout-list">
+        <li class="green-bullet">Squat or Romanian deadlift — 4×6–8</li>
+        <li class="green-bullet">Bulgarian split squat — 3×8 each leg</li>
+        <li class="green-bullet">Leg press or hack squat — 3×10–12</li>
+        <li class="green-bullet">Seated leg curl — 3×12</li>
+        <li class="green-bullet">Planks + pallof press — 2 rounds</li>
+        <li class="green-bullet" style="color:#ffb49a"><strong style="color:#ffb49a">Finisher:</strong> 3 rounds — 10 KB swings, 10 box jumps or step-ups, 200m row or bike</li>
+      </ul>
+      <div class="section-label">Rotating add-on · pick one</div>
+      <ul class="workout-list">
+        <li class="gold-bullet"><strong style="color:#d4a843">Week A — Posterior chain:</strong> Calf raises 3×15, good mornings 3×12</li>
+        <li class="gold-bullet"><strong style="color:#d4a843">Week B — Core:</strong> Ab wheel or cable crunch 3×12, side plank 30 sec each</li>
+      </ul>
+      <div class="note-box"><strong>Foot note:</strong> Swap box jumps for step-ups if foot is bothering you. Same muscle pattern, zero impact.</div>
+    </div>
+  </div>
+
+  <!-- Friday -->
+  <div class="day-card accent-blue">
+    <div class="card-header">
+      <div class="day-name">Friday</div>
+      <div class="badge-row">
+        <div class="day-tag tag-cardio">Cardio*</div>
+        <div class="day-tag tag-smoothie">🥤 Smoothie</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="focus-label">Lunch · Alternate if Mon skipped · WFH</div>
+      <div class="focus-title">Same protocol as Monday</div>
+      <ul class="workout-list">
+        <li class="blue-bullet">Use Friday if Monday cardio didn't happen that week</li>
+        <li class="blue-bullet">Don't do both Mon and Fri — one cardio session per week is the target</li>
+        <li class="blue-bullet">Smoothie after workout either way</li>
+      </ul>
+      <div class="note-box blue"><strong>IF option:</strong> If you move cardio to Friday, move the fast to Friday too. The fast follows the cardio day.</div>
+    </div>
+  </div>
+
+  <!-- Saturday -->
+  <div class="day-card accent-green">
+    <div class="card-header">
+      <div class="day-name">Saturday</div>
+      <div class="badge-row"><div class="day-tag tag-lift">Full Body</div></div>
+    </div>
+    <div class="card-body">
+      <div class="focus-label">Morning · 60 min · Eat breakfast ✓</div>
+      <div class="focus-title">Full Body Lift</div>
+      <ul class="workout-list">
+        <li class="green-bullet">Deadlift — 5×5 heavy</li>
+        <li class="green-bullet">Incline DB press — 3×6–8</li>
+        <li class="green-bullet">Cable or machine row — 3×10</li>
+        <li class="green-bullet">Dumbbell shoulder press — 3×10</li>
+        <li class="green-bullet">Cable or DB chest fly + rear delt fly superset — 2 rounds</li>
+      </ul>
+      <div class="section-label">Rotating add-on · pick one</div>
+      <ul class="workout-list">
+        <li class="gold-bullet"><strong style="color:#d4a843">Week A — Arms:</strong> Lateral raises 3×15, skull crushers 3×12</li>
+        <li class="gold-bullet"><strong style="color:#d4a843">Week B — Core:</strong> Hanging knee raise 3×12, cable woodchop 3×12</li>
+      </ul>
+      <div class="note-box"><strong>Note:</strong> Basketball comes back here once your foot is cleared. Until then this is your third lift day.</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- IF section -->
+<div class="if-section">
+  <h3>16/8 Fasting — 2 Days / Week</h3>
+  <div class="if-grid">
+    <div class="if-day-block">
+      <div class="ifd-name">Wednesday — Anchor</div>
+      <div class="ifd-detail">Office day, rest day. Skip breakfast, first meal at noon. Away from your kitchen, naturally busy — easiest fast of the week.</div>
+    </div>
+    <div class="if-day-block">
+      <div class="ifd-name">Mon or Fri — Cardio Day</div>
+      <div class="ifd-detail">Whichever day you do cardio, that's your second fast. Skip breakfast, work out at lunch, break the fast with your fruit smoothie after.</div>
+    </div>
+  </div>
+  <div class="if-note">Lift days (Tue, Thu, Sat) always include breakfast. Never fast on a day you're lifting — you need fuel to perform and protect muscle.</div>
+</div>
+
+<!-- Nutrition -->
+<div class="nutrition-strip">
+  <h3>Nutrition Notes</h3>
+  <ul>
+    <li>~500 cal/day deficit — targets ~1 lb/week without hurting gym performance</li>
+    <li>~180–200g protein/day to hold onto muscle through the cut</li>
+    <li>Carbs higher on lift days (Tue/Thu/Sat), lower on cardio and rest days</li>
+    <li>Fruit smoothie on cardio days counts as your fast-break meal — keep it protein-forward (add Greek yogurt or protein powder) so it actually fills you</li>
+    <li>IF days create a natural deficit — don't also try to undereat in the eating window</li>
+    <li>At 197–200, reassess — the last few lbs always come off slower</li>
+  </ul>
+</div>
+
+<!-- Weight Tracker -->
+<div class="tracker-wrap">
+  <div class="tracker-header">
+    <h3>Weight Tracker</h3>
+    <div class="tracker-stats">
+      <div class="tstat"><div class="tstat-num" id="stat-current">—</div><div class="tstat-label">Current</div></div>
+      <div class="tstat"><div class="tstat-num" id="stat-lost">—</div><div class="tstat-label">Lost</div></div>
+      <div class="tstat"><div class="tstat-num" id="stat-to-go">—</div><div class="tstat-label">To Goal</div></div>
+    </div>
+  </div>
+  <div class="tracker-input-row">
+    <input type="date" id="input-date" />
+    <input type="number" id="input-weight" placeholder="lbs" step="0.1" min="100" max="400" />
+    <button class="btn-log" onclick="logWeight()">Log It</button>
+    <button class="btn-clear" onclick="clearAll()">Clear All</button>
+  </div>
+  <div class="chart-area" id="chart-area">
+    <div class="chart-empty" id="chart-empty">Log your first weigh-in to see progress</div>
+    <canvas id="weight-chart" style="display:none;"></canvas>
+  </div>
+  <div class="log-table-wrap" id="log-wrap" style="display:none;">
+    <table class="log-table">
+      <thead><tr><th>Date</th><th>Weight</th><th>Change</th><th></th></tr></thead>
+      <tbody id="log-body"></tbody>
+    </table>
+  </div>
+  <div class="tracker-footer">
+    <div class="goal-bar-wrap">
+      <div class="goal-bar-label">
+        <span>Start: 210 lbs</span>
+        <span id="bar-pct">0% to goal</span>
+        <span>Goal: 197 lbs</span>
+      </div>
+      <div class="goal-bar-track"><div class="goal-bar-fill" id="goal-bar" style="width:0%"></div></div>
+    </div>
+  </div>
+</div>
+
+<script>
+  var START = 210, GOAL = 197;
+  var STORE_KEY = 'cut_weights_v1';
+  var today = new Date();
+  var pad = function(n) { return String(n).padStart(2,'0'); };
+  document.getElementById('input-date').value =
+    today.getFullYear()+'-'+pad(today.getMonth()+1)+'-'+pad(today.getDate());
+
+  function load() {
+    try { return JSON.parse(localStorage.getItem(STORE_KEY)) || []; }
+    catch(e) { return []; }
+  }
+  function save(entries) {
+    try { localStorage.setItem(STORE_KEY, JSON.stringify(entries)); }
+    catch(e) { alert('Could not save: '+e.message); }
+  }
+  function logWeight() {
+    var dateVal   = document.getElementById('input-date').value;
+    var weightVal = parseFloat(document.getElementById('input-weight').value);
+    var inp       = document.getElementById('input-weight');
+    if (!dateVal || isNaN(weightVal) || weightVal < 100 || weightVal > 400) {
+      inp.style.borderColor='#c94f2a';
+      setTimeout(function(){ inp.style.borderColor='#3a3f47'; },1200);
+      return;
+    }
+    var entries = load();
+    var idx = -1;
+    for (var i=0;i<entries.length;i++) { if (entries[i].date===dateVal){idx=i;break;} }
+    if (idx>=0) { entries[idx].weight=weightVal; }
+    else        { entries.push({date:dateVal,weight:weightVal}); }
+    entries.sort(function(a,b){return a.date.localeCompare(b.date);});
+    save(entries);
+    inp.value='';
+    render();
+  }
+  function deleteEntry(date) {
+    save(load().filter(function(e){return e.date!==date;}));
+    render();
+  }
+  function clearAll() {
+    if (confirm('Clear all weight entries?')) { localStorage.removeItem(STORE_KEY); render(); }
+  }
+  function formatDate(dateStr) {
+    var p=dateStr.split('-');
+    var m=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    return m[parseInt(p[1])-1]+' '+parseInt(p[2]);
+  }
+  function drawChart(entries) {
+    var canvas=document.getElementById('weight-chart');
+    var empty=document.getElementById('chart-empty');
+    if (entries.length<2) {
+      canvas.style.display='none'; empty.style.display='flex';
+      empty.textContent=entries.length===0?'Log your first weigh-in to see progress':'Log one more entry to see your chart';
+      return;
+    }
+    canvas.style.display='block'; empty.style.display='none';
+    var container=document.getElementById('chart-area');
+    canvas.width=container.clientWidth||340; canvas.height=container.clientHeight||160;
+    var ctx=canvas.getContext('2d');
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    var W=canvas.width,H=canvas.height;
+    var PAD={top:14,right:44,bottom:28,left:44};
+    var cW=W-PAD.left-PAD.right, cH=H-PAD.top-PAD.bottom;
+    var weights=entries.map(function(e){return e.weight;});
+    var allVals=weights.concat([GOAL]);
+    var minW=Math.floor(Math.min.apply(null,allVals))-1;
+    var maxW=Math.ceil(Math.max.apply(null,allVals))+1;
+    var range=maxW-minW;
+    function xOf(i){return PAD.left+(entries.length>1?(i/(entries.length-1))*cW:cW/2);}
+    function yOf(w){return PAD.top+(1-(w-minW)/range)*cH;}
+    ctx.font='10px sans-serif'; ctx.fillStyle='#555'; ctx.textAlign='right';
+    for (var s=0;s<=4;s++) {
+      var val=minW+(range/4)*s; var y=yOf(val);
+      ctx.strokeStyle='#1e2228'; ctx.lineWidth=1;
+      ctx.beginPath(); ctx.moveTo(PAD.left,y); ctx.lineTo(W-PAD.right,y); ctx.stroke();
+      ctx.fillText(Math.round(val)+'lb',PAD.left-3,y+3);
+    }
+    var gy=yOf(GOAL);
+    ctx.save(); ctx.strokeStyle='#3a7d44'; ctx.lineWidth=1; ctx.setLineDash([5,5]);
+    ctx.beginPath(); ctx.moveTo(PAD.left,gy); ctx.lineTo(W-PAD.right,gy); ctx.stroke(); ctx.restore();
+    ctx.fillStyle='#3a7d44'; ctx.textAlign='left'; ctx.font='9px sans-serif';
+    ctx.fillText('Goal',W-PAD.right+3,gy+3);
+    ctx.save(); ctx.beginPath();
+    ctx.moveTo(xOf(0),yOf(weights[0]));
+    for (var i=1;i<entries.length;i++) ctx.lineTo(xOf(i),yOf(weights[i]));
+    ctx.lineTo(xOf(entries.length-1),H-PAD.bottom); ctx.lineTo(xOf(0),H-PAD.bottom);
+    ctx.closePath(); ctx.fillStyle='rgba(201,79,42,0.08)'; ctx.fill(); ctx.restore();
+    ctx.strokeStyle='#c94f2a'; ctx.lineWidth=2; ctx.lineJoin='round';
+    ctx.beginPath(); ctx.moveTo(xOf(0),yOf(weights[0]));
+    for (var i=1;i<entries.length;i++) ctx.lineTo(xOf(i),yOf(weights[i]));
+    ctx.stroke();
+    for (var i=0;i<entries.length;i++) {
+      ctx.beginPath(); ctx.arc(xOf(i),yOf(weights[i]),4,0,Math.PI*2);
+      ctx.fillStyle='#c94f2a'; ctx.fill();
+    }
+    ctx.fillStyle='#666'; ctx.textAlign='center'; ctx.font='9px sans-serif';
+    var show=[0,entries.length-1];
+    if (entries.length>4) show.push(Math.round((entries.length-1)/2));
+    show.forEach(function(i){ ctx.fillText(formatDate(entries[i].date),xOf(i),H-PAD.bottom+12); });
+  }
+  function render() {
+    var entries=load();
+    if (entries.length>0) {
+      var current=entries[entries.length-1].weight;
+      var lost=parseFloat((START-current).toFixed(1));
+      var toGo=Math.max(0,current-GOAL).toFixed(1);
+      var pct=Math.min(100,Math.max(0,((START-current)/(START-GOAL))*100)).toFixed(0);
+      document.getElementById('stat-current').textContent=current+' lbs';
+      document.getElementById('stat-lost').textContent=(lost>=0?'-':'+')+Math.abs(lost)+' lbs';
+      document.getElementById('stat-lost').className='tstat-num'+(lost>=0?' positive':'');
+      document.getElementById('stat-to-go').textContent=toGo+' lbs';
+      document.getElementById('bar-pct').textContent=pct+'% to goal';
+      document.getElementById('goal-bar').style.width=pct+'%';
+    } else {
+      document.getElementById('stat-current').textContent='—';
+      document.getElementById('stat-lost').textContent='—';
+      document.getElementById('stat-to-go').textContent='—';
+      document.getElementById('bar-pct').textContent='0% to goal';
+      document.getElementById('goal-bar').style.width='0%';
+    }
+    drawChart(entries);
+    if (entries.length>0) {
+      document.getElementById('log-wrap').style.display='block';
+      var reversed=entries.slice().reverse();
+      document.getElementById('log-body').innerHTML=reversed.map(function(e,i){
+        var prev=reversed[i+1];
+        var changeHtml='<span class="change-same">—</span>';
+        if (prev) {
+          var diff=parseFloat((e.weight-prev.weight).toFixed(1));
+          var cls=diff<0?'change-down':diff>0?'change-up':'change-same';
+          changeHtml='<span class="'+cls+'">'+(diff>0?'+':'')+diff+' lbs</span>';
+        }
+        return '<tr><td>'+formatDate(e.date)+'</td><td>'+e.weight+' lbs</td><td>'+changeHtml+'</td><td>'
+          +'<button class="btn-delete" onclick="deleteEntry(\''+e.date+'\')" title="Remove">✕</button></td></tr>';
+      }).join('');
+    } else {
+      document.getElementById('log-wrap').style.display='none';
+    }
+  }
+  document.getElementById('input-weight').addEventListener('keydown',function(e){
+    if (e.key==='Enter') logWeight();
+  });
+  window.addEventListener('resize',function(){ drawChart(load()); });
+  render();
+</script>
+</body>
+</html>
